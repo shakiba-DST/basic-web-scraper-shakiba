@@ -2,6 +2,8 @@ import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import os
+import csv
+import re
 from datetime import datetime
 
 
@@ -22,6 +24,45 @@ class AllMovieSpider(scrapy.Spider):
 
         print(f"Sample HTML saved to: {sample_file}")
         print(f"HTML length: {len(response.text)} characters")
+
+        # Extract movie data
+        movies = []
+        movie_selectors = response.css("section.movies div.showtime-results div.movie")[:20]
+
+        for sel in movie_selectors:
+            title = sel.css("span.resultTitle a::text").get()
+            info_text = " ".join(sel.css("span.resultInfo::text").getall()).strip()
+
+            length_match = re.search(r"(\d+\s*min)", info_text)
+            length = length_match.group(1) if length_match else ""
+
+            rating_match = re.search(
+                r"(PG-13|PG|R|G|NC-17|Not Rated|No Rating|NR|Unrated)", info_text
+            )
+            rating = rating_match.group(1) if rating_match else ""
+
+            if rating_match:
+                category = info_text[: rating_match.start()].strip(" -")
+            else:
+                category = info_text.replace(length, "").strip(" -")
+
+            movies.append({
+                "name": title,
+                "category": category,
+                "rating": rating,
+                "length": length,
+            })
+
+        movies = sorted(movies, key=lambda x: x["name"])
+
+        os.makedirs("app/data", exist_ok=True)
+        csv_file = f"app/data/movie_output_{timestamp}.csv"
+        with open(csv_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["name", "category", "rating", "length"])
+            writer.writeheader()
+            writer.writerows(movies)
+
+        print(f"Saved {len(movies)} movies to: {csv_file}")
 
         # Don't return HTML to avoid console spam
         # HTML is saved to file for inspection

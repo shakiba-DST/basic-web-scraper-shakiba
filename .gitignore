@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.env
+~WRL*.tmp
+app/data/*.html

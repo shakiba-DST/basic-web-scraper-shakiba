@@ -4,3 +4,4 @@ __pycache__/
 .env
 ~WRL*.tmp
 app/data/*.html
+*.docx

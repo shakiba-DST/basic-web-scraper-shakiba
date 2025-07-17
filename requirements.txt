@@ -2,3 +2,4 @@ scrapy
 pandas
 uvicorn
 fastapi
+beautifulsoup4

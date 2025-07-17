@@ -54,3 +54,5 @@ def scrape_allmovie():
 if __name__ == "__main__":
     result = scrape_allmovie()
     print(result)
+    from movie_analyzer import analyze_movies
+    analyze_movies()

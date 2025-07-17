@@ -5,6 +5,7 @@ import os
 import csv
 import re
 from datetime import datetime
+from app.movie_stats import print_movie_statistics
 
 
 class AllMovieSpider(scrapy.Spider):
@@ -95,3 +96,4 @@ def scrape_allmovie():
 if __name__ == "__main__":
     result = scrape_allmovie()
     print(result)
+    print_movie_statistics()

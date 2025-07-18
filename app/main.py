@@ -92,30 +92,34 @@ def process_and_save_data():
         print("Scraping did not produce a file.")
 
 
-def analyze_movies():
+from fastapi import FastAPI
+
+app = FastAPI()
+
+def load_movie_data():
     """
-    Reads the movie data from the CSV file, calculates the average movie length
-    and the most common rating, and prints the results.
+    Reads the movie data from the CSV file and returns it as a list of dictionaries.
     """
     # Read the CSV file
     df = pd.read_csv("data/movie_output_2025-07-18.csv")
+    # Clean up the 'Length' column
+    df['Length'] = df['Length'].str.replace(' min', '').str.strip()
+    # Convert the DataFrame to a list of dictionaries
+    movies = df.to_dict(orient='records')
+    return movies
 
-    # Calculate the average length of all movies
-    # Extract numbers from 'Length' column and convert to numeric
-    df['Length'] = df['Length'].str.extract('(\d+)').fillna(0).astype(int)
-    average_length = df[df['Length'] > 0]['Length'].mean()
+@app.get("/movies/all")
+def get_all_movies():
+    """
+    Returns all movies.
+    """
+    return load_movie_data()
 
-    # Find the most common rating
-    ratings_counts = df['Rating'].value_counts()
-    most_common_rating = ratings_counts.index[0]
-    most_common_rating_count = ratings_counts.iloc[0]
-
-    # Print the results
-    print(f"The average length of all movies is {int(average_length)} minutes. "
-          f"{most_common_rating_count} movies have the rating of {most_common_rating} which is the most common rating.")
-
-
-if __name__ == "__main__":
-    scrape_allmovie()
-    process_and_save_data()
-    analyze_movies()
+@app.get("/movies")
+def get_movies_by_rating(rating: str):
+    """
+    Returns movies filtered by the specified rating.
+    """
+    movies = load_movie_data()
+    filtered_movies = [movie for movie in movies if movie['Rating'] == rating]
+    return filtered_movies

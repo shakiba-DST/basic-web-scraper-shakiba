@@ -2,6 +2,7 @@ import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import os
+import csv
 from datetime import datetime
 
 
@@ -23,8 +24,39 @@ class AllMovieSpider(scrapy.Spider):
         print(f"Sample HTML saved to: {sample_file}")
         print(f"HTML length: {len(response.text)} characters")
 
-        # Don't return HTML to avoid console spam
-        # HTML is saved to file for inspection
+        movies = []
+        movie_divs = response.css('div.movie')
+        
+        for movie_div in movie_divs:
+            title = movie_div.css('a[href*="atomtickets.com"]::attr(title)').get()
+            if title and title.strip():
+                movie_info = movie_div.css('span.resultInfo::text').get()
+                
+                if movie_info:
+                    movie_info = movie_info.strip()
+                    parts = [p.strip() for p in movie_info.split(' - ')]
+                    genre = parts[0] if len(parts) > 0 else ""
+                    rating = parts[1] if len(parts) > 1 else ""
+                    runtime = parts[2] if len(parts) > 2 else ""
+                else:
+                    genre = rating = runtime = ""
+                
+                movies.append({
+                    'title': title,
+                    'genre': genre,
+                    'rating': rating,
+                    'runtime': runtime
+                })
+
+        csv_file = f"app/data/movies_{timestamp}.csv"
+        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+            if movies:
+                writer = csv.DictWriter(f, fieldnames=['title', 'genre', 'rating', 'runtime'])
+                writer.writeheader()
+                writer.writerows(movies)
+                print(f"Extracted {len(movies)} movies to: {csv_file}")
+            else:
+                print("No movies found to extract")
 
 
 def scrape_allmovie():

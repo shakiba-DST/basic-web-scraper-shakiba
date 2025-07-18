@@ -4,6 +4,7 @@ from scrapy.utils.project import get_project_settings
 import os
 import pandas as pd
 from datetime import datetime
+from app.movie_analysis import analyze_movie_data
 
 
 class AllMovieSpider(scrapy.Spider):
@@ -79,3 +80,4 @@ def scrape_allmovie():
 if __name__ == "__main__":
     result = scrape_allmovie()
     print(result)
+    analyze_movie_data()

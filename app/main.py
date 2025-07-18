@@ -92,6 +92,30 @@ def process_and_save_data():
         print("Scraping did not produce a file.")
 
 
+def analyze_movies():
+    """
+    Reads the movie data from the CSV file, calculates the average movie length
+    and the most common rating, and prints the results.
+    """
+    # Read the CSV file
+    df = pd.read_csv("data/movie_output_2025-07-18.csv")
+
+    # Calculate the average length of all movies
+    # Extract numbers from 'Length' column and convert to numeric
+    df['Length'] = df['Length'].str.extract('(\d+)').fillna(0).astype(int)
+    average_length = df[df['Length'] > 0]['Length'].mean()
+
+    # Find the most common rating
+    ratings_counts = df['Rating'].value_counts()
+    most_common_rating = ratings_counts.index[0]
+    most_common_rating_count = ratings_counts.iloc[0]
+
+    # Print the results
+    print(f"The average length of all movies is {int(average_length)} minutes. "
+          f"{most_common_rating_count} movies have the rating of {most_common_rating} which is the most common rating.")
+
+
 if __name__ == "__main__":
     scrape_allmovie()
     process_and_save_data()
+    analyze_movies()

@@ -6,6 +6,7 @@ from datetime import datetime
 
 
 class AllMovieSpider(scrapy.Spider):
+
     name = "allmovie"
     start_urls = ["https://allmovie.com/showtimes/movies"]
 

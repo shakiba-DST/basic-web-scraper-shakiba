@@ -2,6 +2,7 @@ import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import os
+import pandas as pd
 from datetime import datetime
 
 
@@ -10,26 +11,54 @@ class AllMovieSpider(scrapy.Spider):
     start_urls = ["https://allmovie.com/showtimes/movies"]
 
     def parse(self, response):
-        # Print status code
         print(f"Status Code: {response.status}")
 
-        # Save sample HTML to file
+        movies = response.css('div.movie')[:20]
+        movie_data = []
+        
+        for movie in movies:
+            title_element = movie.css('span.resultTitle a::text').get()
+            if not title_element:
+                continue
+                
+            info_text = movie.css('span.resultInfo::text').get()
+            if not info_text:
+                continue
+                
+            info_parts = [part.strip() for part in info_text.split(' - ')]
+            if len(info_parts) >= 3:
+                categories = info_parts[0]
+                rating = info_parts[1] 
+                length = info_parts[2]
+            else:
+                categories = info_parts[0] if len(info_parts) > 0 else "Unknown"
+                rating = info_parts[1] if len(info_parts) > 1 else "Unknown"
+                length = info_parts[2] if len(info_parts) > 2 else "Unknown"
+            
+            movie_data.append({
+                'Name': title_element.strip(),
+                'Category': categories,
+                'Rating': rating,
+                'Length': length
+            })
+        
+        movie_data.sort(key=lambda x: x['Name'].lower())
+        
+        df = pd.DataFrame(movie_data)
+        
         timestamp = datetime.now().strftime("%Y-%m-%d")
-        sample_file = f"app/data/sample_response_{timestamp}.html"
-
-        with open(sample_file, "w", encoding="utf-8") as f:
-            f.write(response.text)
-
-        print(f"Sample HTML saved to: {sample_file}")
-        print(f"HTML length: {len(response.text)} characters")
-
-        # Don't return HTML to avoid console spam
-        # HTML is saved to file for inspection
+        csv_filename = f"app/data/movie_output_{timestamp}.csv"
+        
+        df.to_csv(csv_filename, index=False)
+        
+        print(f"Successfully extracted {len(movie_data)} movies")
+        print(f"CSV saved to: {csv_filename}")
+        
+        return movie_data
 
 
 def scrape_allmovie():
     """Scrape allmovie.com and return HTML content"""
-    # Configure settings
     settings = get_project_settings()
     settings.set(
         "USER_AGENT", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -37,18 +66,14 @@ def scrape_allmovie():
     settings.set("ROBOTSTXT_OBEY", False)
     settings.set("DOWNLOAD_DELAY", 1)
 
-    # Create crawler process
     process = CrawlerProcess(settings)
 
-    # Add spider to process
     process.crawl(AllMovieSpider)
 
-    # Start crawling and get results
     results = []
     process.start()
 
-    # Return the result (in a real scenario, you'd capture this from the spider)
-    return "Scraping completed. Check the sample HTML file in app/data folder."
+    return "Scraping completed. Check the movie_output CSV file in app/data folder."
 
 
 if __name__ == "__main__":
